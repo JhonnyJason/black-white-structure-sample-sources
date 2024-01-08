@@ -1,2 +1,155 @@
-h1 Sample Index
-p Sample Paragraph little Text for no use so it better be also no test, well it might say hello, Hello! :D                  1
+.block 
+    h1#void-mailbox-setup Void Mailbox Setup
+    p
+        | First we start with 
+        a(href='#TODO') our regular ArchLinux install on a new server
+        | . On top of that we install all the required packages. Then we configure our mailserver as desired.
+    .block
+        h2#collection-of-helpful-ressources Collection of helpful ressources
+        ul
+            li
+                a(href='https://github.com/mail-in-a-box/mailinabox') Mail-in-a-box Github
+                ul
+                    li
+                        a(href='https://github.com/mail-in-a-box/mailinabox/blob/main/setup/mail-postfix.sh') Base Postfix Configuration
+                    li
+                        a(href='https://github.com/mail-in-a-box/mailinabox/blob/main/setup/mail-users.sh') Mail User Configuration
+                    li
+                        a(href='https://github.com/mail-in-a-box/mailinabox/blob/main/setup/mail-dovecot.sh') Dovecot Configuration
+            li
+                a(href='https://github.com/iredmail') IRedMail Github
+            li
+                a(href='https://github.com/modoboa') Modoboa Github
+                ul
+                    li
+                        a(href='https://github.com/modoboa/modoboa-installer') Modoboa Installer
+                    li
+                        a(href='https://github.com/modoboa/modoboa/blob/master/requirements.txt') Modoboa Requirements
+                        | . 
+                        a(href='https://github.com/modoboa/modoboa/blob/master/setup.py') Modoboa setup.py
+    .block
+        h2#required-packages Required packages
+        ul
+            li postfix
+            li postfix-pcre
+            li postfix-sqlite
+            li sqlite
+            li postgrey
+            li ca-certificates
+            li nginx
+            li certbot
+            li certbot-nginx
+            li dovecot
+            li rspam
+            li roundcube
+            li opendkim
+            li opendmarc
+    .block
+        h2#configuration Configuration
+        .block 
+            h3#postfix-configuration Postfix Configuration
+            p
+                | Postfix is the Mail Transfer Agent(MTA) and is responsible for the transmission of email between servers using the SMTP protocol.
+                | By standard it listens on port 25 for incoming emails from other servers and passes the email to the right service for local mail delivery or further mail filtering. Here we use rspam.
+            p We also want to configure postfix to perform some initial email filtering.
+            ul
+                li drop emails from blacklisted source IPs
+                li apply greylisting (drop email on first arrival)
+                li check if destination address is valid
+                li rewrite destination when an alias was used
+            p
+                | Postfix also listens on ports 465/587 for connections from remote users who want to send their emails. Dovecote is being used for user authentication.
+            p
+                | Packages required: 
+                code postfix postfix-sqlite postfix-pcre postgrey ca-certificates
+            .block
+                h4#domain-classes Domain Classes
+                p
+                    | An important concept for understanding the configuration of Postfix are the Address Classes. Here we have:
+                ul
+                    li Local Domain Class
+                    li Virtual Alias Domain Class
+                    li Virtual Mailbox Domain Class
+                    li Relay Domain Class
+                    li Default Domain Class
+                .block
+                    h5#the-default-domain-class The Default Domain Class
+                    p
+                        | is intended for mail delivery to foreign domains. This is the default case when we use postfix to dispatch an email to any other email address which is not dealt with by out own mailserver.
+                    p
+                        | The mail delivery transport is specified with the 
+                        code default_transport
+                        |  parameter. The default is 
+                        code smtp
+                        |  as using the smtp delivery agent.
+                .block
+                    h5#the-relay-domain-class The Relay Domain Class
+                    p
+                        | is very similar to the default domain class, the only difference being that the email has not been dispatched locally via postfix, instead it arrived at our mailserver through the open internet and is destined to an address of a relayed-to foreign domain.
+                    p
+                        | This foreign domain needs to be specified in the 
+                        code relay_domains
+                        |  parameter. And might be more precisely mapped with the 
+                        code relay_recipient_maps
+                        |  parameter.
+                    p
+                        | Here the mail delivery transport is specidied with the 
+                        code relay_transport
+                        |  parameter. The default is 
+                        code relay
+                        |  which actually uses the smtp delivery agent.
+                .block
+                    h5#the-virtual-mailbox-domain-class The Virtual Mailbox Domain Class
+                    p
+                        | is the final delivery for locally hosted mailboxes of users from our hosted domains. Also here the email usually arrives from the open internet and is accepted for virtual mail delivery if we find the recipient configured with the 
+                        code virtual_mailbox_maps
+                        |  parameter.
+                    p
+                        | You may configure domain names as well with the 
+                        code virtual_mailbox_domains
+                        |  parameter. This parameter defaults to 
+                        code $virtual_mailbox_maps
+                        | .
+                    p
+                        | Mail delivery transport is specified with the 
+                        code virtual_transport
+                        |  parameter. Default is 
+                        code virtual
+                        |  which uses the virtual delivery agent.
+                .block
+                    h5#the-virtual-alias-domain-class The Virtual Alias Domain Class
+                    p
+                     | is a domain class without it&apos;s own delivery transport. Resolving the alias must result in an address of either the virtual mailbox domain class or the local domain class.
+                    p
+                        | Recipient address aliases are defined with the 
+                        code virtual_alias_maps
+                        |  parameter. Default is 
+                        code $virtual_maps
+                        | .
+                    p
+                        | The domain aliases are defined with the 
+                        code virtual_alias_domains
+                        |  parameter. Default is 
+                        code $virtual_alias_maps
+                        | .
+                .block
+                    h5#the-local-domain-class The Local Domain Class
+                    p is for the non-virtual users having a mailbox on the machine. 
+                    p
+                        | Recipient addresses are defined with the 
+                        code local_recipient_maps
+                        |  parameter.
+                    p
+                        | The local domains are defined with the 
+                        code mydestination
+                        |  parameter. If we bind any interface e.g. with the 
+                        code inet_interfaces
+                        |  parameter, then also the specified IP address is accepted as local domain.
+                    p
+                        | Mail delivery transport is specified with the 
+                        code local_transport
+                        |  parameter. Default is 
+                        code local@$myhostname
+                        |  using the local delivery agent.
+
+    p This paragraph belongs to the main document and not the subsections.
